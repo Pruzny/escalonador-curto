@@ -67,10 +67,14 @@ def generate_waiting_text() -> str:
     return text
 
 
-def queue_priority_round_robin(verbose: bool):
+def queue_priority_round_robin(options: dict[str, bool]):
+
     timer = 0
     process_running = False
     higher_priority_list = priority_lists[0]
+    file = None
+    if options["write"]:
+        file = open("process.out", "w")
     while not (is_empty_process_list(process_list) and is_empty_queue_list(priority_lists) and is_empty_io_list(io_list)):
         try:
             text = f"Timer: {timer}\n"
@@ -106,13 +110,17 @@ def queue_priority_round_robin(verbose: bool):
 
                 text += f"{border()}"
 
-            if verbose:
+            if options["verbose"]:
                 print(text)
+            if options["write"]:
+                file.write(text + "\n")
 
         except Exception as error:
             raise error
         finally:
             timer += 1
 
-    if verbose:
+    if options["verbose"]:
         print("End of execution")
+    if options["write"]:
+        file.close()
