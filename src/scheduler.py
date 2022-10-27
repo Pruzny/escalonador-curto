@@ -47,7 +47,7 @@ def border() -> str:
 def generate_ready_text(first: Process) -> str:
     text = ""
     for queue in priority_lists:
-        text += f"Ready Queue {queue.priority}:\n"
+        text += f"Ready Queue {queue.priority} (q{queue.max_quantum}):\n"
         for process in queue.processes:
             if process != first:
                 text += f"\t{process}\n"
@@ -85,7 +85,8 @@ def queue_priority_round_robin(options: dict[str, bool]):
                 first_process = higher_priority_list.processes[0]
                 ready_text = generate_ready_text(first_process)
 
-                text += f"Executing - {first_process}, Remaining: {first_process.cpu_bursts[0]}\n"
+                text += f"Executing Queue {higher_priority_list.priority} (q{higher_priority_list.quantum}) - " \
+                        f"{first_process}, Remaining: {first_process.cpu_bursts[0]}\n"
                 text += ready_text
                 text += generate_waiting_text()
 
