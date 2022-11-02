@@ -6,9 +6,14 @@ PATH = "process.in"
 def check_positive(ad_time: int, priority: int) -> None:
     """checks if admission time and priority time is positive, if not throws a ValueError"""
     if ad_time < 0:
-        raise ValueError("Admission time must be  positive ")
+        raise ValueError("Admission time must be positive ")
     if priority < 0:
         raise ValueError("Priority must be positive.")
+
+
+def check_bursts(burst_list: list) -> None:
+    if len(burst_list) % 2 == 0:
+        raise ValueError("Program starts or ends with IO burst")
 
 
 def read_txt() -> list[Process]:
@@ -21,6 +26,7 @@ def read_txt() -> list[Process]:
             admission_time = int(admission_time)
             priority = int(priority)
             check_positive(admission_time, priority)
+            check_bursts(bursts)
             processes.append(Process(
                 0,
                 admission_time,
@@ -29,8 +35,8 @@ def read_txt() -> list[Process]:
                 bursts,
             ))
         except Exception as error:
-            print(repr(error))
-            # print("Admission time and Priority must be a number")
+            print(error)
+            exit(1)
 
     processes.sort(key=lambda x: x.admission_time)
     count = 0
