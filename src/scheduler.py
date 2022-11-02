@@ -54,7 +54,7 @@ def generate_ready_text(first: Process) -> str:
     return text
 
 
-def generate_waiting_text() -> str:
+def generate_waiting_text(highest_queue: Queue, is_running: bool) -> tuple[bool, str]:
     text = f"Waiting Queue:\n"
     for process in io_list:
         text += f"\t{process}, Remaining: {process.io_bursts[0]}\n"
@@ -62,16 +62,20 @@ def generate_waiting_text() -> str:
         process.update()
         if process.state == Process.EX:
             io_list.remove(process)
+            if is_running:
+                highest_queue.add(highest_queue.remove())
+                highest_queue.resetQuantum()
+                is_running = False
             priority_lists[0].add(process)
 
-    return text
+    return is_running, text
 
 
 def queue_priority_round_robin(options: dict[str, bool]):
 
     timer = 0
     process_running = False
-    higher_priority_list = priority_lists[0]
+    highest_priority_list = priority_lists[0]
     file = None
     if options["write"]:
         file = open("process.out", "w")
@@ -79,35 +83,36 @@ def queue_priority_round_robin(options: dict[str, bool]):
         try:
             text = f"Timer: {timer}\n"
             add_processes(process_list, priority_lists, io_list, timer)
+            process_running, waiting_text = generate_waiting_text(highest_priority_list, process_running)
 
-            higher_priority_list = higher_priority_list if process_running else get_higher_queue(priority_lists)  # Pode ser uma fila vazia (e ainda ter processo que ainda não entrou)
-            if not higher_priority_list.isEmpty():
-                first_process = higher_priority_list.processes[0]
+            highest_priority_list = highest_priority_list if process_running else get_higher_queue(priority_lists)  # Pode ser uma fila vazia (e ainda ter processo que ainda não entrou)
+            if not highest_priority_list.isEmpty():
+                first_process = highest_priority_list.processes[0]
                 ready_text = generate_ready_text(first_process)
 
-                text += f"Executing Queue {higher_priority_list.priority} (q{higher_priority_list.quantum}) - " \
+                text += f"Executing Queue {highest_priority_list.priority} (q{highest_priority_list.quantum}) - " \
                         f"{first_process}, Remaining: {first_process.cpu_bursts[0]}\n"
                 text += ready_text
-                text += generate_waiting_text()
+                text += waiting_text
 
                 first_process.execute()
                 first_process.update()
-                higher_priority_list.quantum -= 1
+                highest_priority_list.quantum -= 1
                 process_running = True
 
                 # Verifica se o processo que executou acabou ou espera IO
                 if first_process.state == Process.IO:
                     process_running = False
-                    higher_priority_list.remove()
-                    higher_priority_list.resetQuantum()
+                    highest_priority_list.remove()
+                    highest_priority_list.resetQuantum()
                     if not first_process.hasEnded():
                         io_list.append(first_process)
 
                 # Verifica se o quantum zerou
-                if higher_priority_list.quantum == 0:
+                if highest_priority_list.quantum == 0:
                     process_running = False
-                    priority_lists[min(higher_priority_list.priority + 1, NUMBER_OF_LISTS - 1)].add(higher_priority_list.remove())
-                    higher_priority_list.resetQuantum()
+                    priority_lists[min(highest_priority_list.priority + 1, NUMBER_OF_LISTS - 1)].add(highest_priority_list.remove())
+                    highest_priority_list.resetQuantum()
 
                 text += f"{border()}"
 
