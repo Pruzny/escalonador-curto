@@ -54,7 +54,8 @@ def generate_ready_text(first: Process) -> str:
     return text
 
 
-def generate_waiting_text(highest_queue: Queue, is_running: bool) -> tuple[bool, str]:
+def generate_waiting_text(highest_queue: Queue) -> tuple[list[Process], str]:
+    reset_list = []
     text = f"Waiting Queue:\n"
     for process in io_list:
         text += f"\t{process}, Remaining: {process.io_bursts[0]}\n"
@@ -62,13 +63,9 @@ def generate_waiting_text(highest_queue: Queue, is_running: bool) -> tuple[bool,
         process.update()
         if process.state == Process.EX:
             io_list.remove(process)
-            if is_running:
-                highest_queue.add(highest_queue.remove())
-                highest_queue.resetQuantum()
-                is_running = False
-            priority_lists[0].add(process)
+            reset_list.append(process)
 
-    return is_running, text
+    return reset_list, text
 
 
 def queue_priority_round_robin(options: dict[str, bool]):
@@ -83,12 +80,14 @@ def queue_priority_round_robin(options: dict[str, bool]):
         try:
             text = f"Timer: {timer}\n"
             add_processes(process_list, priority_lists, io_list, timer)
-            process_running, waiting_text = generate_waiting_text(highest_priority_list, process_running)
 
             highest_priority_list = highest_priority_list if process_running else get_higher_queue(priority_lists)  # Pode ser uma fila vazia (e ainda ter processo que ainda não entrou)
             if not highest_priority_list.isEmpty():
                 first_process = highest_priority_list.processes[0]
                 ready_text = generate_ready_text(first_process)
+
+                # Fila de espera
+                reset_list, waiting_text = generate_waiting_text(highest_priority_list)
 
                 text += f"Executing Queue {highest_priority_list.priority} (q{highest_priority_list.quantum}) - " \
                         f"{first_process}, Remaining: {first_process.cpu_bursts[0]}\n"
@@ -114,7 +113,15 @@ def queue_priority_round_robin(options: dict[str, bool]):
                     priority_lists[min(highest_priority_list.priority + 1, NUMBER_OF_LISTS - 1)].add(highest_priority_list.remove())
                     highest_priority_list.resetQuantum()
 
-                text += f"{border()}"
+                # Verifica se saiu processo da fila de espera
+                if len(reset_list) > 0:
+                    process_running = False
+                    highest_priority_list.add(highest_priority_list.remove())
+                    highest_priority_list.resetQuantum()
+                    for process in reset_list:
+                        priority_lists[0].add(process)
+
+            text += f"{border()}"
 
             if options["verbose"]:
                 print(text)
