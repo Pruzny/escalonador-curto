@@ -41,13 +41,14 @@ Exemplo de uso:
 # Entrada Esperada
 
 No arquivo **process.in** deve conter tempo de admissão, nome do programa, prioridade, listas de tempo de burst
-CPU e I/O. Tempo de bust de CPU e I/O devem ser intercalados sempre terminando com tempo de burst de CPU.
+CPU e I/O. Tempo de bust de CPU e I/O devem ser intercalados sempre terminando com tempo de burst de CPU. 
+**A lista de tempo de bursts deve ter uma quantidade ímpar de elementos**
 
 Exemplo de entrada válida: 
 ```
+5 PROG10 1 5 3 15 5 10
 0 PROG01 1 20
 0 PROG02 1 10 5 10
-5 PROG10 1 5 3 15 5 10
 3 PROG03 2 30
-10 PROG15 1 5 1 15 1 20 50
+10 PROG15 1 5 1 15 1 50
 ```
