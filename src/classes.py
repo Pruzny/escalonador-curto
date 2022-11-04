@@ -81,3 +81,23 @@ class Queue:
 
     def resetQuantum(self) -> None:
         self.quantum = self.max_quantum
+
+
+class SchedulerArgs:
+    instance = None
+    number_of_lists: int
+    priority_lists: list
+    io_list: list
+    quantum: list
+
+    def __init__(self, nl: int, quantum_list: list):
+        self.number_of_lists = nl
+        self.quantum = quantum_list
+        self.priority_lists = list(Queue(i, k) for i, k in zip(range(nl), quantum_list))
+        self.io_list = list()
+
+    @staticmethod
+    def getInstance(number_of_list: int = 4, quantum_list: tuple = (5, 10, 15, 20)):
+        if SchedulerArgs.instance is None:
+            SchedulerArgs.instance = SchedulerArgs(number_of_list, list(quantum_list))
+        return SchedulerArgs.instance
